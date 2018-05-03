@@ -386,7 +386,7 @@ function revisioning_admin_paths() {
  * hook_node_load is also called on the /content summary page:
  * node_admin_nodes() -> node_load_multiple() ->
  * DrupalDefaultEntityController->attachLoad()
- * 
+ *
  * We do nothing in this 2nd case.
  */
 function revisioning_node_load($nodes, $types) {
@@ -547,6 +547,13 @@ function revisioning_node_presave($node) {
   if (isset($node->revision_operation)) {
     $node->revision = ($node->revision_operation > REVISIONING_NO_REVISION);
     $node->revision_moderation = ($node->revision_operation == REVISIONING_NEW_REVISION_WITH_MODERATION);
+  }
+
+  // If a node is being unpublished, then remove from moderation.
+  if (isset($node->nid) && isset($node->original)) {
+    if ($node->status == 0 && $node->original->status == 1) {
+      unset($node->revision_moderation);
+    }
   }
 
   if (!empty($node->revision_moderation) && revisioning_user_may_auto_publish($node)) {
