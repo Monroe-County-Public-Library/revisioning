@@ -21,15 +21,19 @@ function revisioning_install() {
     ->execute();
 
   // Panels override fix, see http://drupal.org/node/519924.
+  // TODO This variable was probably removed in Backdrop without replacement.
   variable_set('page_manager_override_anyway', TRUE);
 
   // If requested, not yet published and unpublished nodes need to reveal their
   // taxonomy terms in Views and in feeds (subject to permissions).
-  if (module_exists('taxonomy') && variable_get('revisioning_in_views_show_unpublished_content_terms', TRUE)) {
+  if (module_exists('taxonomy') && config_get('revisioning.settings', 'revisioning_in_views_show_unpublished_content_terms')) {
     foreach (node_load_multiple(FALSE) as $node) {
       revisioning_update_taxonomy_index($node, TRUE);
     }
   }
+  // Dynamically generated variable data was detected on the following lines.
+  // /revisioning/revisioning.pages.inc line 140
+  // /revisioning/revisioning_api.inc line 200
 }
 
 /**
@@ -39,15 +43,19 @@ function revisioning_uninstall() {
   // Delete all revisioning_* variables at once.
   db_query("DELETE FROM {variable} WHERE name LIKE 'revisioning_%%'");
   // See above.
+  // TODO This variable was probably removed in Backdrop without replacement.
   variable_del('page_manager_override_anyway');
   foreach (node_type_get_types() as $type) {
     // Maybe revisioning_auto_publish_<type> and new_revisions_<type>
     // should be used in array, like 'revision_moderation' below?
+    // TODO This variable was probably removed in Backdrop without replacement.
     variable_del('new_revisions_' . $type->type);
     // Remove 'revision_moderation' from all node_options_<type> variables.
     $variable_name = 'node_options_' . $type->type;
+    // TODO This variable was probably removed in Backdrop without replacement.
     if ($node_options = variable_get($variable_name, NULL)) {
       $node_options = array_diff($node_options, array('revision_moderation'));
+      // TODO This variable was probably removed in Backdrop without replacement.
       variable_set($variable_name, $node_options);
     }
   }
@@ -65,27 +73,48 @@ function revisioning_uninstall() {
   }
 }
 
+// TODO The old hook_update_N functions cannot be applied to Backdrop.
+function revisioning_update_7104() { }
+
+// TODO The old hook_update_N functions cannot be applied to Backdrop.
+function revisioning_update_7107() { }
+
 /**
- * Adjust module weight.
- *
- * As of core 7.12 the new hooks taxonomy_node_insert() and
- * taxonomy_node_update() must be executed before the associated revisioning
- * hooks.
+ * Implements hook_update_last_removed().
  */
-function revisioning_update_7104() {
-  db_update('system')
-    ->fields(array('weight' => 1))
-    ->condition('name', 'revisioning')
-    ->execute();
+function revisioning_update_last_removed() {
+  return 7107;
 }
 
 /**
- * To avoid problems when Revisioning is installed with Diff and Workbench too.
- * See [#2142429].
+ * Migrate revisioning variables to config.
  */
-function revisioning_update_7107() {
-  db_update('system')
-    ->fields(array('weight' => '6'))
-    ->condition('name', 'revisioning')
-    ->execute();
+function revisioning_update_1000() {
+  $config = config('revisioning.settings');
+  $config->set('revisioning_view_callback', update_variable_get('revisioning_view_callback', 'REVISIONING_LOAD_CURRENT'));
+  $config->set('revisioning_edit_callback', update_variable_get('revisioning_edit_callback', 'REVISIONING_LOAD_CURRENT'));
+  $config->set('revisioning_require_update_to_publish', update_variable_get('revisioning_require_update_to_publish', TRUE));
+  $config->set('revisioning_publication_shortcuts', update_variable_get('revisioning_publication_shortcuts', array()));
+  $config->set('revisioning_no_moderation_by_default', update_variable_get('revisioning_no_moderation_by_default', array()));
+  $config->set('revisioning_show_taxonomy_terms', update_variable_get('revisioning_show_taxonomy_terms', TRUE));
+  $config->set('revisioning_in_views_show_unpublished_content_terms', update_variable_get('revisioning_in_views_show_unpublished_content_terms', TRUE));
+  $config->set('revisioning_auto_publish_content_type', update_variable_get('revisioning_auto_publish_content_type', 'dynamic variable in file /revisioning/revisioning.pages.inc line 140'));
+  $config->set('revisioning_block_num_pending', update_variable_get('revisioning_block_num_pending', '5'));
+  $config->set('revisioning_block_order', update_variable_get('revisioning_block_order', 'REVISIONING_REVISIONS_BLOCK_NEWEST_AT_TOP'));
+  $config->set('revisioning_content_summary_page', update_variable_get('revisioning_content_summary_page', ''));
+  $config->set('revisioning_auto_publish_nodetype', update_variable_get('revisioning_auto_publish_nodetype', 'dynamic variable in file /revisioning/revisioning_api.inc line 200'));
+  $config->save();
+
+  update_variable_del('revisioning_view_callback');
+  update_variable_del('revisioning_edit_callback');
+  update_variable_del('revisioning_require_update_to_publish');
+  update_variable_del('revisioning_publication_shortcuts');
+  update_variable_del('revisioning_no_moderation_by_default');
+  update_variable_del('revisioning_show_taxonomy_terms');
+  update_variable_del('revisioning_in_views_show_unpublished_content_terms');
+  update_variable_del('revisioning_auto_publish_content_type');
+  update_variable_del('revisioning_block_num_pending');
+  update_variable_del('revisioning_block_order');
+  update_variable_del('revisioning_content_summary_page');
+  update_variable_del('revisioning_auto_publish_nodetype');
 }

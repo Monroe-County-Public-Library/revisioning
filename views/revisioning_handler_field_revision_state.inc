@@ -33,8 +33,14 @@ class revisioning_handler_field_revision_state extends views_handler_field {
     $this->_node_based = $this->view->base_table == 'node' || (!empty($this->options['relationship']) && $this->options['relationship'] !== 'none');
 
     if ($this->_node_based) {
-      $this->additional_fields['published'] = array('table' => 'node', 'field' => 'status');
-      $this->additional_fields['current_vid'] = array('table' => 'node', 'field' => 'vid');
+      $this->additional_fields['published'] = array(
+        'table' => 'node',
+        'field' => 'status',
+      );
+      $this->additional_fields['current_vid'] = array(
+        'table' => 'node',
+        'field' => 'vid',
+      );
     }
   }
 
@@ -71,7 +77,7 @@ class revisioning_handler_field_revision_state extends views_handler_field {
     $current_vid = $values->{$this->aliases['current_vid']};
     $is_initial_unpublished_draft = !$published && (revisioning_get_number_of_revisions($nid) == 1);
     $is_pending = ($vid > $current_vid) || $is_initial_unpublished_draft;
-    $state_code = $is_pending ? REVISION_PENDING : ($vid == $current_vid ? REVISION_CURRENT : REVISION_ARCHIVED);
+    $state_code = $is_pending?REVISION_PENDING : ($vid == $current_vid?REVISION_CURRENT : REVISION_ARCHIVED);
     $description = revisioning_revision_states($state_code);
     return $description;
   }

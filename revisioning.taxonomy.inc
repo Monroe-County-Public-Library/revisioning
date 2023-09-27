@@ -23,6 +23,7 @@
  *   whether to show unpublished content terms
  */
 function revisioning_update_taxonomy_index($node, $show_unpublished_content_terms = TRUE) {
+  // TODO This variable was probably removed in Backdrop without replacement.
   if (module_exists('taxonomy') && variable_get('taxonomy_maintain_index_table', TRUE)) {
     // First, delete all term id's associated with this node.
     db_delete('taxonomy_index')->condition('nid', $node->nid)->execute();

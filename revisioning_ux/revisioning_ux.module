@@ -34,7 +34,7 @@ function revisioning_ux_form_alter(&$form, $form_state, $form_id) {
     $vid = arg(3);
     if (is_numeric($vid)) {
       $form['info'][$vid]['#markup'] = '<div class="revisions-active">' . $form['info'][$vid]['#markup'] . '</div>';
-      drupal_add_css(drupal_get_path('module', 'revisioning_ux') . '/revisioning_ux.css');
+      backdrop_add_css(backdrop_get_path('module', 'revisioning_ux') . '/revisioning_ux.css');
     }
   }
 }
@@ -67,20 +67,20 @@ function revisioning_ux_page_alter(&$page) {
 
     if (!empty($node->revision_moderation)) {
       if (_revisioning_access_node_revision('publish revisions', $node)) {
-        $page['content']['buttons']['publish'] = drupal_get_form('revisioning_ux_publish', $node);
+        $page['content']['buttons']['publish'] = backdrop_get_form('revisioning_ux_publish', $node);
       }
       elseif (_revisioning_access_node_revision('unpublish current revision', $node)) {
-        $page['content']['buttons']['unpublish'] = drupal_get_form('revisioning_ux_unpublish', $node);
+        $page['content']['buttons']['unpublish'] = backdrop_get_form('revisioning_ux_unpublish', $node);
       }
     }
     if (_revisioning_access_node_revision('delete archived revisions', $node)) {
       $num_archived = revisioning_get_number_of_archived_revisions($node);
       if ($num_archived > 0) {
-        $page['content']['buttons']['delete-archived'] = drupal_get_form('revisioning_ux_delete_archived', $node);
+        $page['content']['buttons']['delete-archived'] = backdrop_get_form('revisioning_ux_delete_archived', $node);
       }
     }
     if (_revisioning_access_node_revision('delete node', $node)) {
-      $page['content']['buttons']['delete-all'] = drupal_get_form('revisioning_ux_delete_all', $node);
+      $page['content']['buttons']['delete-all'] = backdrop_get_form('revisioning_ux_delete_all', $node);
     }
   }
 }
@@ -97,16 +97,24 @@ function revisioning_ux_menu_alter(&$items) {
   // hides 'View' and 'Edit').
   $items['node/%node']['access callback'] = 'node_access';
   $items['node/%node/revisions']['page arguments'] = array(
-    1, $items['node/%node/revisions']['page callback']);
+    1,
+    $items['node/%node/revisions']['page callback'],
+  );
   $items['node/%node/revisions']['page callback'] = '_revisioning_ux_revisioning_redirect';
   $items['node/%node/revisions']['title callback'] = '_revisioning_ux_revisioning_title_for_tab';
   unset($items['node/%node/revisions/list']);
   $items['node/%node/revisions/%vid/view']['title callback'] = '_revisioning_ux_revisioning_title_for_edit_and_view';
   $items['node/%node/revisions/%vid/view']['title arguments'] = array(
-    1, 3, 'view');
+    1,
+    3,
+    'view',
+  );
   $items['node/%node/revisions/%vid/edit']['title callback'] = '_revisioning_ux_revisioning_title_for_edit_and_view';
   $items['node/%node/revisions/%vid/edit']['title arguments'] = array(
-    1, 3, 'edit');
+    1,
+    3,
+    'edit',
+  );
 }
 
 /**
@@ -129,7 +137,7 @@ function revisioning_ux_theme() {
 function _revisioning_ux_revisioning_redirect($node, $was) {
   $item = menu_get_item();
   if ($item['path'] == 'node/%/revisions') {
-    drupal_goto('node/' . $node->nid . '/revisions/' . $node->current_revision_id . '/list');
+    backdrop_goto('node/' . $node->nid . '/revisions/' . $node->current_revision_id . '/list');
   }
   return revisioning_node_overview($node);
 }
@@ -146,12 +154,12 @@ function _revisioning_ux_revisioning_title_for_tab($node, $tab) {
  */
 function _revisioning_ux_revisioning_title_for_edit_and_view($node, $vid, $tab) {
   $latest_vid = revisioning_get_latest_revision_id($node->nid);
-  $title = ($tab == 'edit') ? t('Edit') : t('View');
+  $title = ($tab == 'edit')?t('Edit') : t('View');
   if ($vid == $node->current_revision_id) {
-    $title = ($tab == 'edit') ? t('Edit Current') : t('View Current');
+    $title = ($tab == 'edit')?t('Edit Current') : t('View Current');
   }
   elseif ($vid == $latest_vid) {
-    $title = ($tab == 'edit') ? t('Edit Latest') : t('View Latest');
+    $title = ($tab == 'edit')?t('Edit Latest') : t('View Latest');
   }
   return $title;
 }
@@ -241,7 +249,7 @@ function revisioning_ux_delete_archived_submit(&$form, &$form_state) {
  * Form builder: Delete all.
  */
 function revisioning_ux_delete_all($form, $form_state, $node) {
-  $text = (empty($node->revision_moderation) || $node->num_revisions == 1) ? t('Delete') : t('Delete all');
+  $text = (empty($node->revision_moderation) || $node->num_revisions == 1)?t('Delete') : t('Delete all');
   $form = array();
   $form['node'] = array(
     '#type' => 'value',

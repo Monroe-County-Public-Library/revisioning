@@ -12,6 +12,7 @@
  * revisioning_form_FORMID_form_alter().
  */
 function revisioning_form_alter(&$form, &$form_state, $form_id) {
+  $config = config('revisioning.settings');
 
   if (!empty($form['#node_edit_form'])) {
 
@@ -34,7 +35,7 @@ function revisioning_form_alter(&$form, &$form_state, $form_id) {
     // 'administer nodes' is required by default, but if configured
     // appropriately, then any user premitted to publish this node will get the
     // shortcut controls.
-    $add_radio_selector = variable_get('revisioning_publication_shortcuts', FALSE) ?
+    $add_radio_selector = $config->get('revisioning_publication_shortcuts')?
       revisioning_user_node_access('publish revisions', $node) :
       user_access('administer nodes');
     if ($add_radio_selector) {
@@ -61,16 +62,16 @@ function revisioning_form_alter(&$form, &$form_state, $form_id) {
         '#options' => $options,
         '#default_value' => isset($node->nid)
           ? (int) $node->revision + (int) $is_moderated_content
-          : ($is_moderated_content ? REVISIONING_NEW_REVISION_WITH_MODERATION : REVISIONING_NEW_REVISION_NO_MODERATION),
+          : ($is_moderated_content?REVISIONING_NEW_REVISION_WITH_MODERATION : REVISIONING_NEW_REVISION_NO_MODERATION),
       );
       unset($form['revision_information']['revision']);
 
       // Add javascript to show/hide the "Published" checkbox if the user
       // presses one of the first two radio buttons. Also updates summary tabs.
-      $js_file = drupal_get_path('module', 'revisioning') . '/js/revisioning-radios.js';
+      $js_file = backdrop_get_path('module', 'revisioning') . '/js/revisioning-radios.js';
       // After node.js.
-      drupal_add_js($js_file, array('weight' => 1));
-      if (variable_get('revisioning_no_moderation_by_default', FALSE)) {
+      backdrop_add_js($js_file, array('weight' => 1));
+      if ($config->get('revisioning_no_moderation_by_default')) {
         $form['revision_information']['revision_operation']['#default_value'] = REVISIONING_NEW_REVISION_NO_MODERATION;
       }
     }
@@ -125,19 +126,21 @@ function revisioning_form_node_type_form_alter(&$form, &$form_state) {
     '#collapsed' => FALSE,
   );
   $content_type = $form['#node_type']->type;
+  // TODO This variable was probably removed in Backdrop without replacement.
   $form['workflow']['revisioning']['new_revisions'] = array(
     '#title' => t('Create new revision:'),
     '#type' => 'radios',
     '#options' => array(
       REVISIONING_NEW_REVISION_WHEN_NOT_PENDING => t('Only when saving %type content that is not already in draft/pending moderation', array('%type' => $content_type)),
-      REVISIONING_NEW_REVISION_EVERY_SAVE => t('Every time %type content is updated, even when saving content in draft/pending moderation', array('%type' => $content_type))),
+      REVISIONING_NEW_REVISION_EVERY_SAVE => t('Every time %type content is updated, even when saving content in draft/pending moderation', array('%type' => $content_type)),
+    ),
     '#default_value' => (int) variable_get('new_revisions_' . $content_type, REVISIONING_NEW_REVISION_WHEN_NOT_PENDING),
     '#description' => t('Use less disk space and avoid cluttering your revisions list. With the first option ticked, modifications are saved to the same copy (i.e. no additional revisions are created) until the content is published.'),
   );
   $form['workflow']['revisioning']['revisioning_auto_publish'] = array(
     '#title' => t('Auto-publish drafts of type %type (for moderators)', array('%type' => $content_type)),
     '#type' => 'checkbox',
-    '#default_value' => (int) variable_get('revisioning_auto_publish_' . $content_type, FALSE),
+    '#default_value' => (int) config_get('revisioning.settings', 'revisioning_auto_publish_' . $content_type),
     '#description' => t('If this box is ticked and the user has one of the "Publish content revisions" permissions, then any draft of type %type is published immediately upon saving, without further review or the option to schedule a publication date.', array('%type' => $content_type)),
   );
 }
@@ -146,10 +149,22 @@ function revisioning_form_node_type_form_alter(&$form, &$form_state) {
  * Return a confirmation page for publishing a revision.
  */
 function revisioning_publish_confirm($form, &$form_state, $node) {
-  $form['node_id']  = array('#type' => 'value', '#value' => $node->nid);
-  $form['title']    = array('#type' => 'value', '#value' => $node->title);
-  $form['revision'] = array('#type' => 'value', '#value' => $node->vid);
-  $form['type']     = array('#type' => 'value', '#value' => $node->type);
+  $form['node_id']  = array(
+    '#type' => 'value',
+    '#value' => $node->nid,
+  );
+  $form['title']    = array(
+    '#type' => 'value',
+    '#value' => $node->title,
+  );
+  $form['revision'] = array(
+    '#type' => 'value',
+    '#value' => $node->vid,
+  );
+  $form['type']     = array(
+    '#type' => 'value',
+    '#value' => $node->type,
+  );
   return confirm_form($form,
     t('Are you sure you want to publish this revision of %title?', array('%title' => $node->title)),
     'node/' . $node->nid . '/revisions',
@@ -174,9 +189,18 @@ function revisioning_publish_confirm_submit($form, &$form_state) {
  * Return a confirmation page for unpublishing the node.
  */
 function revisioning_unpublish_confirm($form, &$form_state, $node) {
-  $form['node_id'] = array('#type' => 'value', '#value' => $node->nid);
-  $form['title']   = array('#type' => 'value', '#value' => $node->title);
-  $form['type']    = array('#type' => 'value', '#value' => $node->type);
+  $form['node_id'] = array(
+    '#type' => 'value',
+    '#value' => $node->nid,
+  );
+  $form['title']   = array(
+    '#type' => 'value',
+    '#value' => $node->title,
+  );
+  $form['type']    = array(
+    '#type' => 'value',
+    '#value' => $node->type,
+  );
   return confirm_form($form,
     t('Are you sure you want to unpublish %title?', array('%title' => $node->title)),
     "node/$node->nid/revisions",
@@ -201,7 +225,10 @@ function revisioning_unpublish_confirm_submit($form, &$form_state) {
  */
 function revisioning_delete_archived_confirm($form, &$form_state, $node) {
   $node->num_archived = revisioning_get_number_of_archived_revisions($node);
-  $form['node']  = array('#type' => 'value', '#value' => $node);
+  $form['node']  = array(
+    '#type' => 'value',
+    '#value' => $node,
+  );
   $t = format_plural($node->num_archived,
     'Are you sure you want to delete the archived revision of %title?',
     'Are you sure you want to delete all @count archived revisions of %title?',
@@ -231,7 +258,7 @@ function revisioning_delete_archived_confirm_submit($form, &$form_state) {
 function revisioning_form_node_revision_revert_confirm_alter(&$form, &$form_state) {
   $node = $form['#node_revision'];
   if (_revisioning_get_number_of_pending_revisions($node->nid) > 0) {
-    drupal_set_message(t('There is a pending revision. Are you sure you want to revert to an archived revision?'), 'warning');
+    backdrop_set_message(t('There is a pending revision. Are you sure you want to revert to an archived revision?'), 'warning');
   }
   array_unshift($form['#submit'], 'revisioning_revert_confirm_pre_submit');
   $form['#submit'][] = 'revisioning_revert_confirm_post_submit';
@@ -268,7 +295,7 @@ function revisioning_revert_confirm_pre_submit($form, &$form_state) {
   $node = $form['#node_revision'];
   $return = module_invoke_all('revisionapi', 'pre revert', $node);
   if (in_array(FALSE, $return)) {
-    drupal_goto('node/' . $node->nid . '/revisions/' . $node->vid . '/view');
+    backdrop_goto('node/' . $node->nid . '/revisions/' . $node->vid . '/view');
   }
 }
 
@@ -308,7 +335,7 @@ function revisioning_revert_confirm_post_submit($form, &$form_state) {
  *   themed HTML
  */
 function _revisioning_show_pending_nodes($access = 'view', $user_filter = NO_FILTER) {
-  $is_moderated = user_access('administer nodes') ? NO_FILTER : TRUE;
+  $is_moderated = user_access('administer nodes')?NO_FILTER : TRUE;
   $content_summary = module_grants_monitor_accessible_content_summary($access, NO_FILTER, $user_filter, $is_moderated, TRUE);
   if (user_access('view revision status messages') && strpos($content_summary, 'No content') === FALSE && !user_access('administer nodes')) {
     _revisioning_set_info_message();
@@ -329,7 +356,7 @@ function _revisioning_set_info_message() {
       }
     }
     if (count($moderated_types) > 0) {
-      drupal_set_message(t('You have permission to publish content revisions of type(s): %moderated_types.',
+      backdrop_set_message(t('You have permission to publish content revisions of type(s): %moderated_types.',
         array('%moderated_types' => implode(', ', $moderated_types))));
     }
   }
@@ -369,7 +396,7 @@ function _revisioning_delete_submit(&$form, &$form_state) {
  */
 function revisioning_block_info() {
   $block['pending']['info'] = t('Pending revisions');
-  $block['pending']['cache'] = DRUPAL_NO_CACHE;
+  $block['pending']['cache'] = BACKDROP_NO_CACHE;
   // Towards top of whatever region is chosen.
   $block['pending']['weight'] = -10;
   // Block is implemented by this module.
@@ -381,10 +408,11 @@ function revisioning_block_info() {
  * Implements hook_block_configure().
  */
 function revisioning_block_configure($delta = 'pending') {
+  $config = config('revisioning.settings');
   $form['revisioning_block_num_pending'] = array(
     '#type' => 'textfield',
     '#title' => t('Maximum number of pending revisions displayed'),
-    '#default_value' => variable_get('revisioning_block_num_pending', 5),
+    '#default_value' => $config->get('revisioning_block_num_pending'),
     '#description' => t('Note: the title of this block mentions the total number of revisions pending, which may be greater than the number of revisions displayed.'),
   );
   $form['revisioning_block_order'] = array(
@@ -392,17 +420,19 @@ function revisioning_block_configure($delta = 'pending') {
     '#title' => t('Order in which pending revisions are displayed'),
     '#options' => array(
       REVISIONING_REVISIONS_BLOCK_OLDEST_AT_TOP => t('Oldest at top'),
-      REVISIONING_REVISIONS_BLOCK_NEWEST_AT_TOP => t('Newest at top')),
-    '#default_value' => variable_get('revisioning_block_order', REVISIONING_REVISIONS_BLOCK_NEWEST_AT_TOP),
+      REVISIONING_REVISIONS_BLOCK_NEWEST_AT_TOP => t('Newest at top'),
+    ),
+    '#default_value' => $config->get('revisioning_block_order'),
     '#description' => t('Note: order is based on revision timestamps.'),
   );
   $form['revisioning_content_summary_page'] = array(
     '#type' => 'textfield',
     '#title' => t('Page to go to when the block title is clicked'),
-    '#default_value' => variable_get('revisioning_content_summary_page', ''),
+    '#default_value' => $config->get('revisioning_content_summary_page'),
     '#description' => t('When left blank this will default to either %view_content, if the Views module is enabled, or %admin_content, subject to permissions.<br/>For any of this to work the above <strong>Block title</strong> field must be left blank.', array(
       '%view_content' => 'content-summary',
-      '%admin_content' => 'admin/content')),
+      '%admin_content' => 'admin/content',
+    )),
   );
   return $form;
 }
@@ -411,16 +441,16 @@ function revisioning_block_configure($delta = 'pending') {
  * Implements hook_block_save().
  */
 function revisioning_block_save($delta = '', $edit = array()) {
-  variable_set('revisioning_block_num_pending', (int) $edit['revisioning_block_num_pending']);
-  variable_set('revisioning_block_order', (int) $edit['revisioning_block_order']);
-  variable_set('revisioning_content_summary_page', $edit['revisioning_content_summary_page']);
+  config_set('revisioning.settings', 'revisioning_block_num_pending', (int) $edit['revisioning_block_num_pending']);
+  config_set('revisioning.settings', 'revisioning_block_order', (int) $edit['revisioning_block_order']);
+  config_set('revisioning.settings', 'revisioning_content_summary_page', $edit['revisioning_content_summary_page']);
 }
 
 /**
  * Implements hook_block_view().
  */
 function revisioning_block_view($delta = '') {
-  $order = variable_get('revisioning_block_order', REVISIONING_REVISIONS_BLOCK_NEWEST_AT_TOP) == REVISIONING_REVISIONS_BLOCK_NEWEST_AT_TOP ? 'DESC' : 'ASC';
+  $order = config_get('revisioning.settings', 'revisioning_block_order') == REVISIONING_REVISIONS_BLOCK_NEWEST_AT_TOP ? 'DESC' : 'ASC';
   $revisions = revisioning_get_revisions('view revision list', NO_FILTER, NO_FILTER, NO_FILTER, TRUE, TRUE, 100, 'timestamp ' . $order);
   if (!empty($revisions)) {
     return _revisioning_block_pending_revisions_content($revisions);
@@ -437,21 +467,25 @@ function revisioning_block_view($delta = '') {
  *   the block array
  */
 function _revisioning_block_pending_revisions_content($revisions) {
+  $config = config('revisioning.settings');
   $num_revisions = count($revisions);
-  $max_num_shown = variable_get('revisioning_block_num_pending', 5);
+  $max_num_shown = $config->get('revisioning_block_num_pending');
   $links = array();
   foreach (array_slice($revisions, 0, $max_num_shown) as $revision) {
     // If they exist, should we show multiple pending revisions on same node?
     $links[] = l($revision->title, "node/$revision->nid/revisions/$revision->vid/view");
   }
   // Also loads /css/revisioning-rtl.css
-  drupal_add_css(drupal_get_path('module', 'revisioning') . '/css/revisioning.css');
-  $title_link = trim(variable_get('revisioning_content_summary_page', ''));
+  backdrop_add_css(backdrop_get_path('module', 'revisioning') . '/css/revisioning.css');
+  $title_link = trim($config->get('revisioning_content_summary_page'));
   $link_options = array();
   if (empty($title_link)) {
     if (module_exists('views')) {
       $title_link = 'content-summary';
-      $link_options['query'] = array('revision_moderation' => 1, 'state' => 2);
+      $link_options['query'] = array(
+        'revision_moderation' => 1,
+        'state' => 2,
+      );
     }
     elseif (user_access('access content overview')) {
       $title_link = 'admin/content';

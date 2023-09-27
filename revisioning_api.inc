@@ -178,6 +178,7 @@ function revisioning_revision_is_current($node) {
  *   permission.
  */
 function revisioning_content_is_moderated($content_type, $node = NULL) {
+  // TODO This variable was probably removed in Backdrop without replacement.
   $content_type_is_moderated = !empty($content_type) && in_array('revision_moderation', variable_get('node_options_' . $content_type, array()));
   if (!$content_type_is_moderated && isset($node->nid) && isset($node->current_revision_id)) {
     $latest_vid = revisioning_get_latest_revision_id($node->nid);
@@ -197,7 +198,7 @@ function revisioning_content_is_moderated($content_type, $node = NULL) {
  *   The node object
  */
 function revisioning_user_may_auto_publish($node) {
-  return variable_get('revisioning_auto_publish_' . $node->type, FALSE) && revisioning_user_node_access('publish revisions', $node);
+  return config_get('revisioning.settings', 'revisioning_auto_publish_' . $node->type) && revisioning_user_node_access('publish revisions', $node);
 }
 
 /**
@@ -212,8 +213,8 @@ function revisioning_user_may_auto_publish($node) {
 function revisioning_revision_states($state = NULL) {
   $states = array(
     REVISION_ARCHIVED => t('Archived'),
-    REVISION_CURRENT  => t('Current, published'),
-    REVISION_PENDING  => t('Pending'),
+    REVISION_CURRENT => t('Current, published'),
+    REVISION_PENDING => t('Pending'),
   );
   return $state === NULL ? $states : $states[$state];
 }
@@ -339,7 +340,7 @@ function _revisioning_revertpublish_revision(&$node, $vid = NULL) {
   $node_revision = is_object($node) ? $node : node_load($node, $vid);
   $return = module_invoke_all('revisionapi', 'pre revert', $node_revision);
   if (in_array(FALSE, $return)) {
-    drupal_goto('node/' . $node_revision->nid . '/revisions/' . $node_revision->vid . '/view');
+    backdrop_goto('node/' . $node_revision->nid . '/revisions/' . $node_revision->vid . '/view');
   }
   _revisioning_revert_revision($node_revision);
   module_invoke_all('revisionapi', 'post revert', $node_revision);
@@ -386,8 +387,9 @@ function _revisioning_unpublish_node($nid_or_node, $clear_cache = TRUE) {
 
   db_update('node')
     ->fields(array(
-      'changed' => time(),
-      'status' => NODE_NOT_PUBLISHED))
+    'changed' => time(),
+    'status' => NODE_NOT_PUBLISHED,
+  ))
     ->condition('nid', $node->nid)
     ->execute();
 
@@ -487,18 +489,19 @@ function _revisioning_publish_revision(&$node_revision, $clear_cache = TRUE) {
 
   $return = module_invoke_all('revisionapi', 'pre publish', $node_revision);
   if (in_array(FALSE, $return)) {
-    drupal_goto('node/' . $node_revision->nid . '/revisions/' . $node_revision->vid . '/view');
+    backdrop_goto('node/' . $node_revision->nid . '/revisions/' . $node_revision->vid . '/view');
   }
   // Update {node} and {node_revision} tables setting status and other flags.
   db_update('node')
     ->fields(array(
-      'vid' => $node_revision->vid,
-      'title' => $node_revision->title,
-      'changed' => time(),
-      'status' => NODE_PUBLISHED,
-      'comment' => $node_revision->comment,
-      'promote' => $node_revision->promote,
-      'sticky' => $node_revision->sticky))
+    'vid' => $node_revision->vid,
+    'title' => $node_revision->title,
+    'changed' => time(),
+    'status' => NODE_PUBLISHED,
+    'comment' => $node_revision->comment,
+    'promote' => $node_revision->promote,
+    'sticky' => $node_revision->sticky,
+  ))
     ->condition('nid', $node_revision->nid)
     ->execute();
 
@@ -559,10 +562,10 @@ function _revisioning_publish_revision(&$node_revision, $clear_cache = TRUE) {
 
   watchdog('content', 'Published rev #%revision of @type %title',
     array(
-      '@type' => $node_revision->type,
-      '%title' => $node_revision->title,
-      '%revision' => $node_revision->vid,
-    ),
+    '@type' => $node_revision->type,
+    '%title' => $node_revision->title,
+    '%revision' => $node_revision->vid,
+  ),
     WATCHDOG_NOTICE,
     l(t('view'), "node/$node_revision->nid/revisions/$node_revision->vid/view")
   );
@@ -626,9 +629,9 @@ function _revisioning_publish_latest_revision(&$node) {
 function _revisioning_get_number_of_revisions_newer_than($vid, $nid) {
   $result = db_query("SELECT COUNT(vid) FROM {node_revision} WHERE nid = :nid AND vid > :vid",
     array(
-      ':vid' => $vid,
-      ':nid' => $nid,
-    )
+    ':vid' => $vid,
+    ':nid' => $nid,
+  )
   );
   return $result->fetchField();
 }
@@ -644,7 +647,8 @@ function _revisioning_get_number_of_revisions_newer_than($vid, $nid) {
  */
 function _revisioning_get_number_of_pending_revisions($nid) {
   $result = db_query("SELECT COUNT(r.vid) FROM {node} n INNER JOIN {node_revision} r ON n.nid = r.nid WHERE (r.vid > n.vid AND n.nid = :nid)", array(
-    ':nid' => $nid)
+    ':nid' => $nid,
+  )
   );
   return $result->fetchField();
 }
@@ -662,7 +666,8 @@ function _revisioning_get_number_of_pending_revisions($nid) {
 function _revisioning_get_pending_revisions($nid) {
   $sql = "SELECT r.vid, r.title, n.type FROM {node} n INNER JOIN {node_revision} r ON n.nid = r.nid WHERE (r.vid > n.vid AND n.nid = :nid) ORDER BY r.vid DESC";
   $result = db_query($sql, array(
-    ':nid' => $nid)
+    ':nid' => $nid,
+  )
   );
   $revisions = array();
   foreach ($result as $revision) {
@@ -684,7 +689,7 @@ function _revisioning_revision_is(&$node) {
   if ($node->is_pending) {
     return REVISION_PENDING;
   }
-  return ($node->is_current && $node->status == NODE_PUBLISHED) ? REVISION_CURRENT : REVISION_ARCHIVED;
+  return ($node->is_current && $node->status == NODE_PUBLISHED)?REVISION_CURRENT : REVISION_ARCHIVED;
 }
 
 /**
@@ -812,9 +817,9 @@ function revisioning_get_revisions($op, $is_published = -1, $creator_uid = -1, $
     $sql_where  = empty($sql_where) ? ' WHERE' : $sql_where . ' AND';
     $sql_where .= ' (r.vid>n.vid OR (n.status=0 AND (SELECT COUNT(vid) FROM {node_revision} WHERE nid=n.nid)=1))';
   }
-  $sql_order = " ORDER BY " . (empty($order_by_override) ? _revisioning_extract_order_clause_from_URI() : $order_by_override);
+  $sql_order = " ORDER BY " . (empty($order_by_override)?_revisioning_extract_order_clause_from_URI() : $order_by_override);
   $include_taxonomy_terms = module_exists('taxonomy') &&
-    variable_get('revisioning_show_taxonomy_terms', TRUE) && (count(taxonomy_get_vocabularies()) > 0);
+    config_get('revisioning.settings', 'revisioning_show_taxonomy_terms') && (count(taxonomy_get_vocabularies()) > 0);
   if ($include_taxonomy_terms) {
     $conditions = array('type' => 'taxonomy_term_reference');
     $fields = field_read_fields($conditions);
@@ -933,7 +938,7 @@ function _revisioning_extract_order_clause_from_URI() {
   // from theme_table() is meant to look after it, but it's got a bug [#480382].
   // Note: this function is secure, as we're only allowing recognised values,
   // all unknown values, result in a descending sort by 'timestamp'.
-  switch ($order_by = drupal_strtolower($_REQUEST['order'])) {
+  switch ($order_by = backdrop_strtolower($_REQUEST['order'])) {
     case 'creator':
       $order_by = 'n.uid';
       break;
@@ -950,7 +955,7 @@ function _revisioning_extract_order_clause_from_URI() {
       $order_by = 'state';
       break;
 
-    // List names that are fine the way they are here:
+      // List names that are fine the way they are here:
     case 'title':
     case 'type':
     case 'term':
@@ -960,6 +965,6 @@ function _revisioning_extract_order_clause_from_URI() {
       $order_by = 'timestamp';
       break;
   }
-  $direction = (drupal_strtolower($_REQUEST['sort']) == 'asc') ? 'ASC' : 'DESC';
+  $direction = (backdrop_strtolower($_REQUEST['sort']) == 'asc') ? 'ASC' : 'DESC';
   return "$order_by $direction";
 }

@@ -71,28 +71,28 @@ function revisioning_tokens($type, $tokens, array $data = array(), array $option
 
       case 'revision-title':
         $title = $revision->title;
-        $replacements[$original] = $sanitize ? check_plain($title) : $title;
+        $replacements[$original] = $sanitize?check_plain($title) : $title;
         break;
 
       case 'revision-body':
         $text = reset($revision->body);
         $text = $text[0]['value'];
-        $replacements[$original] = $sanitize ? check_plain($text) : $text;
+        $replacements[$original] = $sanitize?check_plain($text) : $text;
         break;
 
       case 'revision-vid':
         $replacements[$original] = $revision->vid;
         break;
 
-      // Default values for the chained tokens handled below.
+        // Default values for the chained tokens handled below.
       case 'revision-author':
         $author = user_load($revision->revision_uid);
-        $name = format_username($author);
-        $replacements[$original] = $sanitize ? check_plain($name) : $name;
+        $name = user_format_name($author);
+        $replacements[$original] = $sanitize?check_plain($name) : $name;
         break;
 
       case 'revision-created':
-        $langcode = empty($options['language']->language) ? LANGUAGE_NONE : $options['language']->language;
+        $langcode = empty($options['language']->language)?LANGUAGE_NONE : $options['language']->language;
         $replacements[$original] = format_date($revision->revision_timestamp, 'medium', '', NULL, $langcode);
         break;
     }

@@ -47,6 +47,7 @@ class revisioning_handler_filter_node_revision_moderation extends views_handler_
     $this->value_title = t('Moderated');
     $this->value_options = array(
       REVISIONING_MODERATED => t('Moderated'),
-      REVISIONING_NOT_MODERATED => t('Not moderated'));
+      REVISIONING_NOT_MODERATED => t('Not moderated'),
+    );
   }
 }

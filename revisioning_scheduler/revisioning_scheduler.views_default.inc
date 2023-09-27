@@ -209,7 +209,7 @@ function revisioning_scheduler_views_default_views() {
   $handler->display->display_options['fields']['name']['hide_alter_empty'] = 1;
   $handler->display->display_options['fields']['name']['link_to_user'] = 1;
   $handler->display->display_options['fields']['name']['overwrite_anonymous'] = 0;
-  $handler->display->display_options['fields']['name']['format_username'] = 1;
+  $handler->display->display_options['fields']['name']['user_format_name'] = 1;
 
   /* Display: Page */
   $handler = $view->new_display('page', 'Page', 'page');

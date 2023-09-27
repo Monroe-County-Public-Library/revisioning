@@ -50,8 +50,8 @@ class revisioning_handler_field_node_state extends views_handler_field {
     $latest_vid = revisioning_get_latest_revision_id($nid);
     $is_pending = ($latest_vid > $current_vid) || $is_initial_unpublished_draft;
     $description = $is_pending
-      ? (!$published && !$is_initial_unpublished_draft ? t('Archived with revision pending') : t('Revision pending'))
-      : ($published && ($latest_vid == $current_vid) ? t('Current, published') : t('Archived'));
+      ? (!$published && !$is_initial_unpublished_draft?t('Archived with revision pending') : t('Revision pending'))
+      : ($published && ($latest_vid == $current_vid)?t('Current, published') : t('Archived'));
     return $description;
   }
 }

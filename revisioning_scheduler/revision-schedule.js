@@ -6,7 +6,7 @@
    * o the node is already published, but the new revision to be created goes in
    *   moderation, i.e will not be published yet
    */
-  Drupal.behaviors.showPublicationDateTimeField = {
+  Backdrop.behaviors.showPublicationDateTimeField = {
     attach: function (context) {
       var publishedBox = $('.form-item-status input');
       var newRevisionInModerationRadio = $('#edit-revision-operation-2');

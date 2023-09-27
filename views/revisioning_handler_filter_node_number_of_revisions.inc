@@ -16,7 +16,7 @@ class revisioning_handler_filter_node_number_of_revisions extends views_handler_
     }
 
     $info = $this->operators();
-    $operator_symbol = drupal_strtoupper($info[$this->operator]['short']);
+    $operator_symbol = backdrop_strtoupper($info[$this->operator]['short']);
     if (!empty($operator_symbol)) {
       $node_table = $this->ensure_my_table();
       $revisions_table = $this->query->ensure_table('node_revision');

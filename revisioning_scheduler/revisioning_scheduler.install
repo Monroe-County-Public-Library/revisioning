@@ -14,19 +14,23 @@ function revisioning_scheduler_schema() {
       'revision_vid' => array(
         'description' => 'The identifier for this revision',
         'type' => 'int',
-        'not null' => TRUE),
+        'not null' => TRUE,
+      ),
       'revision_nid' => array(
         'description' => 'The primary identifier for this node',
         'type' => 'int',
-        'not null' => TRUE),
+        'not null' => TRUE,
+      ),
       'revision_uid' => array(
         'description' => 'The user who submitted this revision',
         'type' => 'int',
-        'not null' => TRUE),
+        'not null' => TRUE,
+      ),
       'revision_date' => array(
         'description' => 'The date when this revision will be published',
         'type' => 'int',
-        'not null' => TRUE),
+        'not null' => TRUE,
+      ),
     ),
     'primary key' => array('revision_vid'),
   );
@@ -42,21 +46,31 @@ function revisioning_scheduler_install() {
     ->fields(array('weight' => 1))
     ->condition('name', 'revisioning_scheduler')
     ->execute();
+  // Dynamically generated variable data was detected on the following lines.
+}
+
+// TODO The old hook_update_N functions cannot be applied to Backdrop.
+function revisioning_scheduler_update_7014() { }
+
+// TODO The old hook_update_N functions cannot be applied to Backdrop.
+function revisioning_scheduler_update_7015() { }
+
+/**
+ * Implements hook_update_last_removed().
+ */
+function revisioning_scheduler_update_last_removed() {
+  return 7015;
 }
 
 /**
- * Weight of revisioning_scheduler should be same as revisioning.
+ * Migrate revisioning_scheduler variables to config.
  */
-function revisioning_scheduler_update_7014() {
-  db_update('system')
-    ->fields(array('weight' => 1))
-    ->condition('name', 'revisioning_scheduler')
-    ->execute();
-}
+function revisioning_scheduler_update_1000() {
+  $config = config('revisioning_scheduler.settings');
+  $config->set('revisioning_scheduler_date_format', update_variable_get('revisioning_scheduler_date_format', ''));
+  $config->set('revisioning_scheduler_on_edit_form', update_variable_get('revisioning_scheduler_on_edit_form', TRUE));
+  $config->save();
 
-/**
- * Delete scheduled publication of revisions of already deleted nodes.
- */
-function revisioning_scheduler_update_7015() {
-  db_query('DELETE FROM {revisioning_scheduler} WHERE revision_nid NOT IN (SELECT nid FROM {node})');
+  update_variable_del('revisioning_scheduler_date_format');
+  update_variable_del('revisioning_scheduler_on_edit_form');
 }

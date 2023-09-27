@@ -106,7 +106,7 @@ function revisioning_events_argument_global_user($arguments, $name, $info) {
  */
 function revisioning_events_argument_current_revision($arguments, $name, $info) {
   if (empty($arguments['node'])) {
-    drupal_set_message(t('Revisioning: could not evaluate rule condition -- node variable missing.'), 'warning');
+    backdrop_set_message(t('Revisioning: could not evaluate rule condition -- node variable missing.'), 'warning');
     return FALSE;
   }
   $node = $arguments['node'];
@@ -128,11 +128,19 @@ function revisioning_events_argument_target_revision_author($arguments, $name, $
   return user_load($node->revision_uid);
 }
 
+/**
+ * @todo Please document this function.
+ * @see http://drupal.org/node/1354
+ */
 function revisioning_events_argument_node_author($arguments, $name, $info) {
   $node = $arguments['node'];
   return user_load($node->uid);
 }
 
+/**
+ * @todo Please document this function.
+ * @see http://drupal.org/node/1354
+ */
 function revisioning_events_argument_current_revision_author($arguments, $name, $info) {
   $node = $arguments['node'];
   $current_vid = $node->current_revision_id;
@@ -152,7 +160,10 @@ function revisioning_rules_condition_info() {
   $defaults = array(
     'group' => t('Revisioning'),
     'parameter' => array(
-      'node' => array('type' => 'node', 'label' => t('Content')),
+      'node' => array(
+        'type' => 'node',
+        'label' => t('Content'),
+      ),
     ),
   );
   $items['revisioning_node_has_pending'] = $defaults + array(
@@ -228,13 +239,19 @@ function revisioning_rules_action_info() {
     'revisioning_rules_action_publish_latest' => $default + array(
       'label' => t('Publish the most recent pending revision'),
       'parameter' => array(
-        'node' => array('type' => 'node', 'label' => t('content')),
+        'node' => array(
+          'type' => 'node',
+          'label' => t('content'),
+        ),
       ),
     ),
     'revisioning_rules_action_load_current' => $default + array(
       'label' => t('Load current revision of content'),
       'parameter' => array(
-        'node' => array('type' => 'node', 'label' => t('content')),
+        'node' => array(
+          'type' => 'node',
+          'label' => t('content'),
+        ),
       ),
       'new variables' => array(
         'loaded_current_revision' => array(

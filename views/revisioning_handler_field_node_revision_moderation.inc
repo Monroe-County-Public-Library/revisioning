@@ -39,6 +39,6 @@ class revisioning_handler_field_node_revision_moderation extends views_handler_f
     $content_type = $values->{$this->aliases['type']};
     $moderated = revisioning_content_is_moderated($content_type);
     // Not returning 'No' to allow special tricks with empty field.
-    return $moderated ? t('Yes') : '';
+    return $moderated?t('Yes') : '';
   }
 }

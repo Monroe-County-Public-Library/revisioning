@@ -74,6 +74,17 @@ function revisioning_help($path, $arg) {
 }
 
 /**
+ * Implements hook_config_info().
+ */
+function revisioning_config_info() {
+  $prefixes['revisioning.settings'] = array(
+    'label' => t('Revisioning settings'),
+    'group' => t('Configuration'),
+  );
+  return $prefixes;
+}
+
+/**
  * Implements hook_permission().
  *
  * Revisioning permissions. Note that permissions to view, revert and delete
@@ -85,11 +96,11 @@ function revisioning_permission() {
 
   $moderated_content_types = implode(', ', revisioning_moderated_content_types(FALSE));
   $publish_description = empty($moderated_content_types)
-    ? t('Please select one or more content types for moderation by ticking the <em>New revision in draft, pending moderation</em> <strong>Publishing option</strong> at <em>Structure >> Content types >> edit</em>.')
+    ?t('Please select one or more content types for moderation by ticking the <em>New revision in draft, pending moderation</em> <strong>Publishing option</strong> at <em>Structure >> Content types >> edit</em>.')
     : t('Applies to content types that are subject to moderation, i.e.: %moderated_content_types.',
         array('%moderated_content_types' => $moderated_content_types));
 
-  if (!empty($moderated_content_types) && variable_get('revisioning_require_update_to_publish', TRUE)) {
+  if (!empty($moderated_content_types) && config_get('revisioning.settings', 'revisioning_require_update_to_publish')) {
     $publish_description .= ' <br/>' . $edit_description;
   }
 
@@ -117,13 +128,17 @@ function revisioning_permission() {
     $machine_name = check_plain($type->type);
     if (revisioning_content_is_moderated($machine_name)) {
       $permissions['view revisions of own ' . $machine_name . ' content'] = array(
-        'title' => t('%type-name: View revisions of own content', array('%type-name' => $type->name)));
+        'title' => t('%type-name: View revisions of own content', array('%type-name' => $type->name)),
+      );
       $permissions['view revisions of any ' . $machine_name . ' content'] = array(
-        'title' => t("%type-name: View revisions of anyone's content", array('%type-name' => $type->name)));
+        'title' => t("%type-name: View revisions of anyone's content", array('%type-name' => $type->name)),
+      );
       $permissions['publish revisions of own ' . $machine_name . ' content'] = array(
-        'title' => t('%type-name: Publish revisions of own content', array('%type-name' => $type->name)));
+        'title' => t('%type-name: Publish revisions of own content', array('%type-name' => $type->name)),
+      );
       $permissions['publish revisions of any ' . $machine_name . ' content'] = array(
-        'title' => t("%type-name: Publish revisions of anyone's content", array('%type-name' => $type->name)));
+        'title' => t("%type-name: Publish revisions of anyone's content", array('%type-name' => $type->name)),
+      );
     }
   }
   return $permissions;
@@ -142,7 +157,7 @@ function revisioning_menu() {
   $items['admin/config/content/revisioning'] = array(
     'title' => 'Revisioning',
     'description' => 'Configure how content view and edit links behave. Customise revision summary listing.',
-    'page callback' => 'drupal_get_form',
+    'page callback' => 'backdrop_get_form',
     'page arguments' => array('revisioning_admin_configure'),
     'access arguments' => array('administer site configuration'),
     'file' => 'revisioning.admin.inc',
@@ -151,7 +166,7 @@ function revisioning_menu() {
   // Plain link, not a tab, to allow users to unpublish a node.
   $items['node/%node/unpublish-current'] = array(
     // 'title' => t(Unpublish current revision'),
-    'page callback' => 'drupal_get_form',
+    'page callback' => 'backdrop_get_form',
     'page arguments' => array('revisioning_unpublish_confirm', 1),
     'access callback' => '_revisioning_access_node_revision',
     'access arguments' => array('unpublish current revision', 1),
@@ -176,7 +191,7 @@ function revisioning_menu() {
 
   $items['node/%node/revisions/delete-archived'] = array(
     'title' => 'Delete archived revisions',
-    'page callback' => 'drupal_get_form',
+    'page callback' => 'backdrop_get_form',
     'page arguments' => array('revisioning_delete_archived_confirm', 1),
     'access callback' => '_revisioning_access_node_revision',
     'access arguments' => array('delete archived revisions', 1),
@@ -206,7 +221,7 @@ function revisioning_menu() {
     'access callback' => '_revisioning_access_node_revision',
     'access arguments' => array('edit revisions', 1),
     'file' => 'node.pages.inc',
-    'file path' => drupal_get_path('module', 'node'),
+    'file path' => backdrop_get_path('module', 'node'),
     'type' => MENU_LOCAL_TASK,
     'weight' => -7,
     // 'tab_parent' => 'node/%/revisions',
@@ -219,7 +234,7 @@ function revisioning_menu() {
   $items['node/%node/revisions/%vid/publish'] = array(
     'title' => 'Publish',
     'load arguments' => array(3),
-    'page callback' => 'drupal_get_form',
+    'page callback' => 'backdrop_get_form',
     'page arguments' => array('revisioning_publish_confirm', 1),
     'access callback' => '_revisioning_access_node_revision',
     'access arguments' => array('publish revisions', 1),
@@ -234,7 +249,7 @@ function revisioning_menu() {
   $items['node/%node/revisions/%vid/unpublish'] = array(
     'title' => 'Unpublish',
     'load arguments' => array(3),
-    'page callback' => 'drupal_get_form',
+    'page callback' => 'backdrop_get_form',
     'page arguments' => array('revisioning_unpublish_confirm', 1),
     'access callback' => '_revisioning_access_node_revision',
     'access arguments' => array('unpublish current revision', 1),
@@ -245,12 +260,12 @@ function revisioning_menu() {
   $items['node/%node/revisions/%vid/revert'] = array(
     'title' => 'Revert to this',
     'load arguments' => array(3),
-    'page callback' => 'drupal_get_form',
+    'page callback' => 'backdrop_get_form',
     'page arguments' => array('node_revision_revert_confirm', 1),
     'access callback' => '_revisioning_access_node_revision',
     'access arguments' => array('revert revisions', 1),
     'file' => 'node.pages.inc',
-    'file path' => drupal_get_path('module', 'node'),
+    'file path' => backdrop_get_path('module', 'node'),
     'type' => MENU_LOCAL_TASK,
     'weight' => -2,
   );
@@ -258,12 +273,12 @@ function revisioning_menu() {
   $items['node/%node/revisions/%vid/delete'] = array(
     'title' => 'Delete',
     'load arguments' => array(3),
-    'page callback' => 'drupal_get_form',
+    'page callback' => 'backdrop_get_form',
     'page arguments' => array('node_revision_delete_confirm', 1),
     'access callback' => '_revisioning_access_node_revision',
     'access arguments' => array('delete revisions', 1),
     'file' => 'node.pages.inc',
-    'file path' => drupal_get_path('module', 'node'),
+    'file path' => backdrop_get_path('module', 'node'),
     'type' => MENU_LOCAL_TASK,
     'weight' => 10,
   );
@@ -381,11 +396,11 @@ function revisioning_admin_paths() {
  *
  * hook_node_load is called when viewing a single node
  * node_load() -> node_load_multiple() ->
- * DrupalDefaultEntityController->attachLoad()
+ * BackdropDefaultEntityController->attachLoad()
  *
  * hook_node_load is also called on the /content summary page:
  * node_admin_nodes() -> node_load_multiple() ->
- * DrupalDefaultEntityController->attachLoad()
+ * BackdropDefaultEntityController->attachLoad()
  *
  * We do nothing in this 2nd case.
  */
@@ -399,7 +414,7 @@ function revisioning_node_load($nodes, $types) {
   // See also revisioning_update_taxonomy_index().
   //
   $double_check_access = (strpos($_GET['q'], 'taxonomy/term') === 0) &&
-    variable_get('revisioning_in_views_show_unpublished_content_terms', TRUE);
+    config_get('revisioning.settings', 'revisioning_in_views_show_unpublished_content_terms');
 
   // At this point status, comment, promote and sticky have been set on all of
   // the $nodes according to the {node_revision} table (not the {node} table),
@@ -495,7 +510,7 @@ function revisioning_node_view($node, $view_mode, $langcode) {
  */
 function revisioning_set_status_message($message) {
   if (user_access('view revision status messages')) {
-    drupal_set_message(filter_xss($message), 'status');
+    backdrop_set_message(filter_xss($message), 'status');
   }
 }
 
@@ -508,10 +523,10 @@ function revisioning_node_prepare($node) {
   if (!empty($node->nid)) {
     $count = _revisioning_get_number_of_revisions_newer_than($node->vid, $node->nid);
     if ($count == 1) {
-      drupal_set_message(t('Please note there is one revision more recent than the one you are about to edit.'), 'warning');
+      backdrop_set_message(t('Please note there is one revision more recent than the one you are about to edit.'), 'warning');
     }
     elseif ($count > 1) {
-      drupal_set_message(t('Please note there are @count revisions more recent than the one you are about to edit.',
+      backdrop_set_message(t('Please note there are @count revisions more recent than the one you are about to edit.',
         array('@count' => $count)), 'warning');
     }
   }
@@ -586,8 +601,9 @@ function revisioning_node_presave($node) {
   if (!empty($node->revision_moderation) /* || !empty($auto_publish) */) {
     // May want to do this for auto_publish too, to provide $node->current... to
     // other modules, as a courtesy.
+    // TODO This variable was probably removed in Backdrop without replacement.
     if (!isset($node->revision_condition) && !empty($node->revision) && !empty($node->is_pending)
-      && variable_get('new_revisions_' . $node->type, REVISIONING_NEW_REVISION_WHEN_NOT_PENDING) == REVISIONING_NEW_REVISION_WHEN_NOT_PENDING) {
+        && variable_get('new_revisions_' . $node->type, REVISIONING_NEW_REVISION_WHEN_NOT_PENDING) == REVISIONING_NEW_REVISION_WHEN_NOT_PENDING) {
       revisioning_set_status_message(t('Updating existing draft, not creating new revision as this one is still pending.'));
       // To tell revisioning_node_update().
       $node->revision_condition = REVISIONING_NEW_REVISION_WHEN_NOT_PENDING;
@@ -622,7 +638,7 @@ function revisioning_node_presave($node) {
  */
 function revisioning_node_update($node) {
 
-  revisioning_update_taxonomy_index($node, variable_get('revisioning_in_views_show_unpublished_content_terms', TRUE));
+  revisioning_update_taxonomy_index($node, config_get('revisioning.settings', 'revisioning_in_views_show_unpublished_content_terms'));
 
   // Check whether the node has a current_status property and update the
   // node->status to allow node_save()'s call to node_access_acquire_grants()
@@ -645,13 +661,14 @@ function revisioning_node_update($node) {
     // after here.
     db_update('node')
       ->fields(array(
-        'vid'     => $node->current_revision_id,
-        'status'  => $node->current_status,
-        'title'   => $node->current_title,
-        // In case Comment module enabled.
-        'comment' => $node->current_comment,
-        'promote' => $node->current_promote,
-        'sticky'  => $node->current_sticky))
+      'vid' => $node->current_revision_id,
+      'status' => $node->current_status,
+      'title' => $node->current_title,
+      // In case Comment module enabled.
+      'comment' => $node->current_comment,
+      'promote' => $node->current_promote,
+      'sticky' => $node->current_sticky,
+    ))
       ->condition('nid', $node->nid)
       ->execute();
   }
@@ -702,10 +719,10 @@ function revisioning_node_update($node) {
  */
 function revisioning_node_insert($node) {
 
-  revisioning_update_taxonomy_index($node, variable_get('revisioning_in_views_show_unpublished_content_terms', TRUE));
+  revisioning_update_taxonomy_index($node, config_get('revisioning.settings', 'revisioning_in_views_show_unpublished_content_terms'));
 
   if (!empty($node->revision_moderation)) {
-    revisioning_set_status_message($node->status ? t('Initial revision created and published.') : t('Initial draft created, pending publication.'));
+    revisioning_set_status_message($node->status?t('Initial revision created and published.') : t('Initial draft created, pending publication.'));
   }
 
   // Add revision usage records to files to prevent them being deleted.
@@ -772,7 +789,7 @@ function revisioning_node_access_records_alter(&$grants, $node) {
 function revisioning_views_api() {
   return array(
     'api' => views_api_version(),
-    'path' => drupal_get_path('module', 'revisioning') . '/views',
+    'path' => backdrop_get_path('module', 'revisioning') . '/views',
   );
 }
 
@@ -780,6 +797,7 @@ function revisioning_views_api() {
  * Implements hook_user_node_access().
  */
 function revisioning_user_node_access($revision_op, $node, $account = NULL) {
+  $config = config('revisioning.settings');
   if (!isset($account)) {
     $account = $GLOBALS['user'];
   }
@@ -812,7 +830,7 @@ function revisioning_user_node_access($revision_op, $node, $account = NULL) {
       return user_access($revision_op, $account) ? 'update' : FALSE;
 
     case 'publish revisions':
-      $node_op = variable_get('revisioning_require_update_to_publish', TRUE) ? 'update' : 'view';
+      $node_op = $config->get('revisioning_require_update_to_publish') ? 'update' : 'view';
       if (user_access('publish revisions', $account)) {
         return $node_op;
       }
@@ -825,7 +843,7 @@ function revisioning_user_node_access($revision_op, $node, $account = NULL) {
       return FALSE;
 
     case 'unpublish current revision':
-      $node_op = variable_get('revisioning_require_update_to_publish', TRUE) ? 'update' : 'view';
+      $node_op = $config->get('revisioning_require_update_to_publish') ? 'update' : 'view';
       return user_access('unpublish current revision', $account) ? $node_op : FALSE;
 
     case 'delete revisions':
@@ -837,7 +855,7 @@ function revisioning_user_node_access($revision_op, $node, $account = NULL) {
       return 'delete';
 
     default:
-      drupal_set_message(t("Unknown Revisioning operation '%revision_op'. Treating as 'view'.",
+      backdrop_set_message(t("Unknown Revisioning operation '%revision_op'. Treating as 'view'.",
         array('%revision_op' => $revision_op)), 'warning', FALSE);
   }
   return 'view';
@@ -1068,9 +1086,10 @@ function _revisioning_view_edit_access_callback($op, $node) {
  *   REVISIONING_LOAD_LATEST or REVISIONING_LOAD_CURRENT
  */
 function _revisioning_load_op($node, $op, $check_access = TRUE) {
+  $config = config('revisioning.settings');
   if (!empty($node->revision_moderation)) {
-    $view_mode = (int) variable_get('revisioning_view_callback', REVISIONING_LOAD_CURRENT);
-    $edit_mode = (int) variable_get('revisioning_edit_callback', REVISIONING_LOAD_CURRENT);
+    $view_mode = (int) $config->get('revisioning_view_callback');
+    $edit_mode = (int) $config->get('revisioning_edit_callback');
     $load_op = ($op == 'edit') ? $edit_mode : $view_mode;
     if ($load_op == REVISIONING_LOAD_LATEST) {
       // Site is configured to load latest revision, but we'll only do this if
@@ -1104,7 +1123,7 @@ function _revisioning_load_op($node, $op, $check_access = TRUE) {
  * the permitted operations above it.
  *
  * @return array
- *   render array as returned by drupal_get_form()
+ *   render array as returned by backdrop_get_form()
  */
 function revisioning_node_overview($node) {
   return _revisioning_theme_revisions_summary($node);
@@ -1149,7 +1168,7 @@ function _revisioning_view_revision($node) {
     // For Panels, see [#1567880]
     $router_item = menu_get_item('node/' . $node->nid);
     if (!empty($router_item['include_file'])) {
-      $path = DRUPAL_ROOT . '/'; // $_SERVER['DOCUMENT_ROOT'] . base_path();
+      $path = BACKDROP_ROOT . '/'; // $_SERVER['DOCUMENT_ROOT'] . base_path();
       require_once $path . $router_item['include_file'];
     }
     // Call whatever function is assigned to the main node path but pass the
@@ -1188,37 +1207,38 @@ function _revisioning_edit_revision($node) {
  */
 function _revisioning_title_for_tab($node, $tab) {
   if ($tab == 'revisions') {
-    return is_numeric(arg(3)) ? t('Revision operations') : t('Revisions');
+    return is_numeric(arg(3))?t('Revision operations') : t('Revisions');
   }
   /*
-  if (empty($node->revision_moderation) || $node->num_revisions <= 1) {
-    return ($tab == 'edit' ? t('Edit') : t('View'));
-  }
-  if (_revisioning_load_op($node, $tab) == REVISIONING_LOAD_LATEST) {
-    return ($tab == 'edit' ? t('Edit latest') : t('View latest'));
-  }
-  return ($tab == 'edit' ? t('Edit current') : t('View current'));
-  */
+   if (empty($node->revision_moderation) || $node->num_revisions <= 1) {
+   return ($tab == 'edit' ? t('Edit') : t('View'));
+   }
+   if (_revisioning_load_op($node, $tab) == REVISIONING_LOAD_LATEST) {
+   return ($tab == 'edit' ? t('Edit latest') : t('View latest'));
+   }
+   return ($tab == 'edit' ? t('Edit current') : t('View current'));
+   */
   if (!empty($node->revision_moderation) && $node->num_revisions > 1) {
     if (_revisioning_load_op($node, $tab) == REVISIONING_LOAD_LATEST) {
-      return ($tab == 'edit' ? t('Edit latest') : t('View latest'));
+      return ($tab == 'edit'?t('Edit latest') : t('View latest'));
     }
     if (_revisioning_access_node_revision('view revisions', $node)) {
-      return ($tab == 'edit' ? t('Edit current') : t('View current'));
+      return ($tab == 'edit'?t('Edit current') : t('View current'));
     }
   }
-  return ($tab == 'edit' ? t('Edit') : t('View'));
+  return ($tab == 'edit'?t('Edit') : t('View'));
 }
 
 /**
  * Set custom theme.
  */
 function _revisioning_set_custom_theme_if_necessary() {
+  $config = config('revisioning.settings');
   // Use the admin theme if the user specified this at Appearance >> Settings.
   // Note: first tick 'View the administration theme' at People >> Permissions.
-  if (variable_get('node_admin_theme', FALSE)) {
+  if (config_get('system.performance', 'node_admin_theme')) {
     global $theme, $custom_theme;
-    $custom_theme = variable_get('admin_theme', $theme);
+    $custom_theme = config_get('system.performance', 'admin_theme');
   }
 }
 
@@ -1250,4 +1270,23 @@ function revisioning_page_manager_override($task_name) {
     case 'node_view':
       return '_revisioning_view';
   }
+}
+
+/**
+ * Implements hook_autoload_info().
+ */
+function revisioning_autoload_info() {
+  return array(
+    'revisioning_handler_field_node_last_editor' => 'views/revisioning_handler_field_node_last_editor.inc',
+    'revisioning_handler_field_node_number_of_revisions' => 'views/revisioning_handler_field_node_number_of_revisions.inc',
+    'revisioning_handler_field_node_revision_moderation' => 'views/revisioning_handler_field_node_revision_moderation.inc',
+    'revisioning_handler_field_node_state' => 'views/revisioning_handler_field_node_state.inc',
+    'revisioning_handler_field_revision_state' => 'views/revisioning_handler_field_revision_state.inc',
+    'revisioning_handler_filter_node_number_of_revisions' => 'views/revisioning_handler_filter_node_number_of_revisions.inc',
+    'revisioning_handler_filter_node_revision_moderation' => 'views/revisioning_handler_filter_node_revision_moderation.inc',
+    'revisioning_handler_filter_node_state' => 'views/revisioning_handler_filter_node_state.inc',
+    'revisioning_handler_filter_revision_latest' => 'views/revisioning_handler_filter_revision_latest.inc',
+    'revisioning_handler_filter_revision_latest_published' => 'views/revisioning_handler_filter_revision_latest_published.inc',
+    'revisioning_handler_filter_revision_state' => 'views/revisioning_handler_filter_revision_state.inc',
+  );
 }
