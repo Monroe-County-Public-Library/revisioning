@@ -1,6 +1,7 @@
 
-DESCRIPTION
-===========
+
+# Revisioning
+
 This module channels unpublished content as well as edits to current content
 into a queue for review by a moderator/publisher prior to becoming "live", i.e.
 visible to the public.
@@ -28,12 +29,23 @@ enable revisioning_ux, try it out, and later go back to the traditional model
 without any difficulty.
 
 
-INSTALLATION & CONFIGURATION
-============================
-Step-by-step instructions can be found in the tutorials listed on the
-Revisioning project page, http://drupal.org/project/revisioning.
+## Installation and Configuration
+- Install this module using the official Backdrop CMS instructions at
+  https://backdropcms.org/guide/modules
 
-AUTHORS
-=======
-Main module: Rik de Boer, Melbourne, Australia.
-Revisioning UX: Greg Anderson, USA
+- Step-by-step instructions can be found in the tutorials listed on the
+Drupal Revisioning project page, http://drupal.org/project/revisioning.
+
+## Credits
+- Current Drupal version maintainers: 
+- [RdeBoer](https://www.drupal.org/u/rdeboer)
+- Drupal Revisioning UX: 
+- [greg.1.anderson](https://www.drupal.org/user/438598)
+
+## Current Backdrop maintainer
+- [pgrayove-mcpl](https://github.com/pgrayove-mcpl)
+- Seeking additional maintainers
+
+## License
+This project is GPL v2 software. See the LICENSE.txt file in this directory for
+complete text.
