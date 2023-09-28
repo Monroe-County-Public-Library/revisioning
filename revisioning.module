@@ -460,7 +460,7 @@ function revisioning_node_load($nodes, $types) {
  *
  * First of the dont_display hooks.
  */
-function revisioning_entity_prepare_view($entities, $entity_type, $langcode) {
+function revisioning_entity_prepare_view($entities, $entity_type) {
   if ($entity_type == 'node') {
     foreach ($entities as $node) {
       if (!empty($node->dont_display)) {
