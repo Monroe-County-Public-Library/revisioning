@@ -6,7 +6,7 @@
  */
 
 /**
- * Implements hook_triggr_info().
+ * Implements hook_trigger_info().
  *
  * Defines triggers available in this module.
  */
