@@ -20,10 +20,6 @@ function revisioning_install() {
     ->condition('name', 'revisioning')
     ->execute();
 
-  // Panels override fix, see http://drupal.org/node/519924.
-  // TODO This variable was probably removed in Backdrop without replacement.
-  variable_set('page_manager_override_anyway', TRUE);
-
   // If requested, not yet published and unpublished nodes need to reveal their
   // taxonomy terms in Views and in feeds (subject to permissions).
   if (module_exists('taxonomy') && config_get('revisioning.settings', 'revisioning_in_views_show_unpublished_content_terms')) {
@@ -31,9 +27,19 @@ function revisioning_install() {
       revisioning_update_taxonomy_index($node, TRUE);
     }
   }
+
+  $config = config('revisioning.settings');
+  foreach (node_type_get_types() as $type) {
+    $autopublish = $config->get('revisioning_auto_publish_' . $type->type);
+    if (!$autopublish) {
+      $config->set('revisioning_auto_publish_' . $type->type, 0);
+    }
+  }
+  $config->save();
+
   // Dynamically generated variable data was detected on the following lines.
   // /revisioning/revisioning.pages.inc line 140
-  // /revisioning/revisioning_api.inc line 200
+  // /revisioning/revisioning_api.inc line 200.
 }
 
 /**
@@ -73,12 +79,6 @@ function revisioning_uninstall() {
   }
 }
 
-// TODO The old hook_update_N functions cannot be applied to Backdrop.
-function revisioning_update_7104() { }
-
-// TODO The old hook_update_N functions cannot be applied to Backdrop.
-function revisioning_update_7107() { }
-
 /**
  * Implements hook_update_last_removed().
  */
@@ -91,18 +91,21 @@ function revisioning_update_last_removed() {
  */
 function revisioning_update_1000() {
   $config = config('revisioning.settings');
-  $config->set('revisioning_view_callback', update_variable_get('revisioning_view_callback', 'REVISIONING_LOAD_CURRENT'));
-  $config->set('revisioning_edit_callback', update_variable_get('revisioning_edit_callback', 'REVISIONING_LOAD_CURRENT'));
+  $config->set('revisioning_view_callback', update_variable_get('revisioning_view_callback', 0));
+  $config->set('revisioning_edit_callback', update_variable_get('revisioning_edit_callback', 0));
   $config->set('revisioning_require_update_to_publish', update_variable_get('revisioning_require_update_to_publish', TRUE));
   $config->set('revisioning_publication_shortcuts', update_variable_get('revisioning_publication_shortcuts', array()));
   $config->set('revisioning_no_moderation_by_default', update_variable_get('revisioning_no_moderation_by_default', array()));
   $config->set('revisioning_show_taxonomy_terms', update_variable_get('revisioning_show_taxonomy_terms', TRUE));
   $config->set('revisioning_in_views_show_unpublished_content_terms', update_variable_get('revisioning_in_views_show_unpublished_content_terms', TRUE));
-  $config->set('revisioning_auto_publish_content_type', update_variable_get('revisioning_auto_publish_content_type', 'dynamic variable in file /revisioning/revisioning.pages.inc line 140'));
   $config->set('revisioning_block_num_pending', update_variable_get('revisioning_block_num_pending', '5'));
-  $config->set('revisioning_block_order', update_variable_get('revisioning_block_order', 'REVISIONING_REVISIONS_BLOCK_NEWEST_AT_TOP'));
+  $config->set('revisioning_block_order', update_variable_get('revisioning_block_order', 1));
   $config->set('revisioning_content_summary_page', update_variable_get('revisioning_content_summary_page', ''));
-  $config->set('revisioning_auto_publish_nodetype', update_variable_get('revisioning_auto_publish_nodetype', 'dynamic variable in file /revisioning/revisioning_api.inc line 200'));
+  foreach (node_type_get_types() as $type) {
+    $config->set('revisioning_auto_publish_' . $type->type, update_variable_get('revisioning_auto_publish_' . $type->type, 0));
+    // Delete variables.
+    update_variable_del('save_draft_enabled_' . $type->type);
+  }
   $config->save();
 
   update_variable_del('revisioning_view_callback');
@@ -116,5 +119,4 @@ function revisioning_update_1000() {
   update_variable_del('revisioning_block_num_pending');
   update_variable_del('revisioning_block_order');
   update_variable_del('revisioning_content_summary_page');
-  update_variable_del('revisioning_auto_publish_nodetype');
 }

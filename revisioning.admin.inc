@@ -88,7 +88,7 @@ function revisioning_admin_configure() {
     '#type' => 'fieldset',
     '#title' => t('Additional info'),
     '#description' => t('The following content access modules are enabled and may affect whether users can view, edit, delete or publish content:<br/>%modules.',
-      array('%modules' => empty($modules)?t('none') : implode(', ', $modules))),
+      array('%modules' => empty($modules) ? t('none') : implode(', ', $modules))),
   );
 
   $form['actions']['#type'] = 'actions';
@@ -108,15 +108,15 @@ function revisioning_admin_configure() {
  * Execute the revisioning_admin_configure_form.
  */
 function revisioning_admin_configure_form_submit($form, &$form_state) {
+  $config = config('revisioning.settings');
+
   // Exclude unnecessary form elements.
   form_state_values_clean($form_state);
 
   foreach ($form_state['values'] as $key => $new_value) {
-    // TODO This variable was probably removed in Backdrop without replacement.
-    $old_value = variable_get($key);
+    $old_value = $config->get($key);
     if ($old_value != $new_value) {
-      // TODO This variable was probably removed in Backdrop without replacement.
-      variable_set($key, $new_value);
+      $config->set($key, $new_value);
       if ($key == 'revisioning_in_views_show_unpublished_content_terms') {
         foreach (node_load_multiple(FALSE) as $node) {
           revisioning_update_taxonomy_index($node, $new_value);
@@ -124,6 +124,8 @@ function revisioning_admin_configure_form_submit($form, &$form_state) {
       }
     }
   }
+
+  $config->save();
 
   backdrop_set_message(t('The revisioning configuration options have been saved.'));
 }

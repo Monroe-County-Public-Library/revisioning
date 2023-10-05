@@ -1,15 +1,13 @@
 {
     "_config_name": "revisioning.settings",
-    "revisioning_view_callback": "REVISIONING_LOAD_CURRENT",
-    "revisioning_edit_callback": "REVISIONING_LOAD_CURRENT",
+    "revisioning_view_callback": 0,
+    "revisioning_edit_callback": 0,
     "revisioning_require_update_to_publish": true,
     "revisioning_publication_shortcuts": false,
     "revisioning_no_moderation_by_default": false,
     "revisioning_show_taxonomy_terms": true,
     "revisioning_in_views_show_unpublished_content_terms": true,
-    "revisioning_auto_publish_content_type": "dynamic variable in file /revisioning/revisioning.pages.inc line 140",
     "revisioning_block_num_pending": "5",
-    "revisioning_block_order": "REVISIONING_REVISIONS_BLOCK_NEWEST_AT_TOP",
-    "revisioning_content_summary_page": "",
-    "revisioning_auto_publish_nodetype": "dynamic variable in file /revisioning/revisioning_api.inc line 200"
+    "revisioning_block_order": 1,
+    "revisioning_content_summary_page": ""
 }
