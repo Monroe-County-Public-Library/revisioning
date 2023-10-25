@@ -116,33 +116,50 @@ function revisioning_form_alter(&$form, &$form_state, $form_id) {
  * and auto-publish policies.
  */
 function revisioning_form_node_type_form_alter(&$form, &$form_state) {
-  $form['workflow']['#collapsed'] = FALSE;
-  $form['workflow']['node_options']['#options']['revision_moderation'] = t('New revision in draft, pending moderation (requires "Create new revision")');
+  $config = config('revisioning.settings');
+  $form['revision']['#collapsed'] = FALSE;
+  $form['revision']['node_options']['#options']['revision_moderation'] = t('New revision in draft, pending moderation (requires "Create new revision")');
 
-  $form['workflow']['revisioning'] = array(
+  $form['revision']['revisioning'] = array(
     '#type' => 'fieldset',
     '#title' => t('New revision in draft'),
     '#collapsible' => TRUE,
     '#collapsed' => FALSE,
   );
   $content_type = $form['#node_type']->type;
-  // TODO This variable was probably removed in Backdrop without replacement.
-  $form['workflow']['revisioning']['new_revisions'] = array(
+  $form['revision']['revisioning']['new_revisions'] = array(
     '#title' => t('Create new revision:'),
     '#type' => 'radios',
     '#options' => array(
       REVISIONING_NEW_REVISION_WHEN_NOT_PENDING => t('Only when saving %type content that is not already in draft/pending moderation', array('%type' => $content_type)),
       REVISIONING_NEW_REVISION_EVERY_SAVE => t('Every time %type content is updated, even when saving content in draft/pending moderation', array('%type' => $content_type)),
     ),
-    '#default_value' => (int) variable_get('new_revisions_' . $content_type, REVISIONING_NEW_REVISION_WHEN_NOT_PENDING),
+    '#default_value' => (int) $config->get('new_revisions_' . $content_type),
     '#description' => t('Use less disk space and avoid cluttering your revisions list. With the first option ticked, modifications are saved to the same copy (i.e. no additional revisions are created) until the content is published.'),
   );
-  $form['workflow']['revisioning']['revisioning_auto_publish'] = array(
+  $form['revision']['revisioning']['revisioning_auto_publish'] = array(
     '#title' => t('Auto-publish drafts of type %type (for moderators)', array('%type' => $content_type)),
     '#type' => 'checkbox',
-    '#default_value' => (int) config_get('revisioning.settings', 'revisioning_auto_publish_' . $content_type),
+    '#default_value' => (int) $config->get('revisioning_auto_publish_' . $content_type),
     '#description' => t('If this box is ticked and the user has one of the "Publish content revisions" permissions, then any draft of type %type is published immediately upon saving, without further review or the option to schedule a publication date.', array('%type' => $content_type)),
   );
+  $form['#submit'][] = 'revisioning_form_node_type_form_submit';
+}
+
+/**
+ * Submit handler for node type edit form.
+ *
+ * @param [type] $form
+ * @param [type] $form_state
+ * @param [type] $node
+ * @return void
+ */
+function revisioning_form_node_type_form_submit($form, &$form_state) {
+  $config = config('revisioning.settings');
+  $content_type = $form['#node_type']->type;
+  $config->set('new_revisions_' . $content_type, $form_state['values']['new_revisions']);
+  $config->set('revisioning_auto_publish_' . $content_type, $form_state['values']['revisioning_auto_publish']);
+  $config->save();
 }
 
 /**
