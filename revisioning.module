@@ -563,7 +563,6 @@ function revisioning_node_presave($node) {
   if (!empty($node->revision_moderation) /* || !empty($auto_publish) */) {
     // May want to do this for auto_publish too, to provide $node->current... to
     // other modules, as a courtesy.
-    // TODO This variable was probably removed in Backdrop without replacement.
     if (!isset($node->revision_condition) && !empty($node->revision) && !empty($node->is_pending)
         && variable_get('new_revisions_' . $node->type, REVISIONING_NEW_REVISION_WHEN_NOT_PENDING) == REVISIONING_NEW_REVISION_WHEN_NOT_PENDING) {
       revisioning_set_status_message(t('Updating existing draft, not creating new revision as this one is still pending.'));
@@ -672,6 +671,7 @@ function revisioning_node_update($node) {
       }
     }
   }
+  cache('entity_node')->delete($node->nid);
 }
 
 /**

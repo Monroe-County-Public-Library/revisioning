@@ -46,14 +46,7 @@ function revisioning_scheduler_install() {
     ->fields(array('weight' => 1))
     ->condition('name', 'revisioning_scheduler')
     ->execute();
-  // Dynamically generated variable data was detected on the following lines.
 }
-
-// TODO The old hook_update_N functions cannot be applied to Backdrop.
-function revisioning_scheduler_update_7014() { }
-
-// TODO The old hook_update_N functions cannot be applied to Backdrop.
-function revisioning_scheduler_update_7015() { }
 
 /**
  * Implements hook_update_last_removed().
@@ -70,7 +63,6 @@ function revisioning_scheduler_update_1000() {
   $config->set('revisioning_scheduler_date_format', update_variable_get('revisioning_scheduler_date_format', ''));
   $config->set('revisioning_scheduler_on_edit_form', update_variable_get('revisioning_scheduler_on_edit_form', TRUE));
   $config->save();
-
   update_variable_del('revisioning_scheduler_date_format');
   update_variable_del('revisioning_scheduler_on_edit_form');
 }

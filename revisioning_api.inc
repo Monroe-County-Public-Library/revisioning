@@ -178,8 +178,8 @@ function revisioning_revision_is_current($node) {
  *   permission.
  */
 function revisioning_content_is_moderated($content_type, $node = NULL) {
-  // TODO This variable was probably removed in Backdrop without replacement.
-  $content_type_is_moderated = !empty($content_type) && in_array('revision_moderation', variable_get('node_options_' . $content_type, array()));
+
+  $content_type_is_moderated = !empty($content_type) && config_get('revisioning.settings', 'revision_moderation_' . $content_type);
   if (!$content_type_is_moderated && isset($node->nid) && isset($node->current_revision_id)) {
     $latest_vid = revisioning_get_latest_revision_id($node->nid);
     return $latest_vid > $node->current_revision_id;

@@ -36,35 +36,12 @@ function revisioning_install() {
     }
   }
   $config->save();
-
-  // Dynamically generated variable data was detected on the following lines.
-  // /revisioning/revisioning.pages.inc line 140
-  // /revisioning/revisioning_api.inc line 200.
 }
 
 /**
  * Implements hook_uninstall().
  */
 function revisioning_uninstall() {
-  // Delete all revisioning_* variables at once.
-  db_query("DELETE FROM {variable} WHERE name LIKE 'revisioning_%%'");
-  // See above.
-  // TODO This variable was probably removed in Backdrop without replacement.
-  variable_del('page_manager_override_anyway');
-  foreach (node_type_get_types() as $type) {
-    // Maybe revisioning_auto_publish_<type> and new_revisions_<type>
-    // should be used in array, like 'revision_moderation' below?
-    // TODO This variable was probably removed in Backdrop without replacement.
-    variable_del('new_revisions_' . $type->type);
-    // Remove 'revision_moderation' from all node_options_<type> variables.
-    $variable_name = 'node_options_' . $type->type;
-    // TODO This variable was probably removed in Backdrop without replacement.
-    if ($node_options = variable_get($variable_name, NULL)) {
-      $node_options = array_diff($node_options, array('revision_moderation'));
-      // TODO This variable was probably removed in Backdrop without replacement.
-      variable_set($variable_name, $node_options);
-    }
-  }
   // Make sure that unpublished nodes do not reveal their taxonomy terms, once
   // Revisioning is uninstalled.
   if (module_exists('taxonomy')) {
@@ -101,13 +78,21 @@ function revisioning_update_1000() {
   $config->set('revisioning_block_num_pending', update_variable_get('revisioning_block_num_pending', '5'));
   $config->set('revisioning_block_order', update_variable_get('revisioning_block_order', 1));
   $config->set('revisioning_content_summary_page', update_variable_get('revisioning_content_summary_page', ''));
-  foreach (node_type_get_types() as $type) {
-    $config->set('revisioning_auto_publish_' . $type->type, update_variable_get('revisioning_auto_publish_' . $type->type, 0));
-    // Delete variables.
-    update_variable_del('save_draft_enabled_' . $type->type);
+  $types = node_type_get_types();
+  foreach ($types as $type) {
+    $config->set('new_revisions_' . $type->type, update_variable_get('new_revisions_' . $type->type, FALSE));
+    $config->set('revisioning_auto_publish_' . $type->type, update_variable_get('revisioning_auto_publish_' . $type->type, FALSE));
+    $moderate = (update_variable_get('node_options_' . $type->type, FALSE) == 'revision_moderation') ? TRUE : FALSE;
+    $config->set('revision_moderation_' . $type->type, $moderate);
   }
+
   $config->save();
 
+  foreach ($types as $type) {
+    // Delete after config is saved.
+    update_variable_del('new_revisions_' . $type->type);
+    update_variable_del('revisioning_auto_publish_' . $type->type);
+  }
   update_variable_del('revisioning_view_callback');
   update_variable_del('revisioning_edit_callback');
   update_variable_del('revisioning_require_update_to_publish');

@@ -117,8 +117,15 @@ function revisioning_form_alter(&$form, &$form_state, $form_id) {
  */
 function revisioning_form_node_type_form_alter(&$form, &$form_state) {
   $config = config('revisioning.settings');
+  $content_type = $form['#node_type']->type;
   $form['revision']['#collapsed'] = FALSE;
-  $form['revision']['node_options']['#options']['revision_moderation'] = t('New revision in draft, pending moderation (requires "Create new revision")');
+  $form['revision']['revision_moderation'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Revision moderation'),
+    '#default_value' => (!empty($config->get('revision_moderation_' . $content_type))) ? 1 : 0,
+    '#description' => t('New revision in draft, pending moderation (requires "Create new revision by default")'),
+    '#weight' => -25,
+  );
 
   $form['revision']['revisioning'] = array(
     '#type' => 'fieldset',
@@ -126,7 +133,6 @@ function revisioning_form_node_type_form_alter(&$form, &$form_state) {
     '#collapsible' => TRUE,
     '#collapsed' => FALSE,
   );
-  $content_type = $form['#node_type']->type;
   $form['revision']['revisioning']['new_revisions'] = array(
     '#title' => t('Create new revision:'),
     '#type' => 'radios',
@@ -157,6 +163,7 @@ function revisioning_form_node_type_form_alter(&$form, &$form_state) {
 function revisioning_form_node_type_form_submit($form, &$form_state) {
   $config = config('revisioning.settings');
   $content_type = $form['#node_type']->type;
+  $config->set('revision_moderation_' . $content_type, $form_state['values']['revision_moderation']);
   $config->set('new_revisions_' . $content_type, $form_state['values']['new_revisions']);
   $config->set('revisioning_auto_publish_' . $content_type, $form_state['values']['revisioning_auto_publish']);
   $config->save();
