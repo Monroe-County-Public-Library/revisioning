@@ -1,0 +1,165 @@
+{
+  "_config_name": "views.view.revisioning_content_revisions_summary",
+  "name": "revisioning_content_revisions_summary",
+  "description": "A list of individual content revisions, filtered by state.",
+  "tag": "Revisioning",
+  "disabled": false,
+  "base_table": "node_revision",
+  "human_name": "Content summary (all revisions)",
+  "core": 1,
+  "module": "revisioning",
+  "display": {
+    "default": {
+      "display_title": "Master",
+      "display_plugin": "default",
+      "display_options": {
+        "query": {
+          "type": "views_query",
+          "options": {
+            "distinct": true,
+            "pure_distinct": true
+          }
+        },
+        "title": "Content revisions summary",
+        "use_more_always": false,
+        "access": {
+          "type": "perm",
+          "perm": "view revisions"
+        },
+        "cache": {
+          "type": "none"
+        },
+        "exposed_form": {
+          "type": "basic"
+        },
+        "pager": {
+          "type": "full",
+          "options": {
+            "items_per_page": "20"
+          }
+        },
+        "style_plugin": "table",
+        "style_options": {
+          "columns": {
+            "nid": "nid",
+            "vid": "vid",
+            "title": "title",
+            "timestamp": "timestamp",
+            "state": "state"
+          },
+          "default": "timestamp",
+          "info": {
+            "nid": {
+              "sortable": 1,
+              "default_sort_order": "desc",
+              "align": "",
+              "separator": "",
+              "empty_column": 0
+            },
+            "vid": {
+              "sortable": 1,
+              "default_sort_order": "desc",
+              "align": "",
+              "separator": "",
+              "empty_column": 0
+            },
+            "title": {
+              "sortable": 1,
+              "default_sort_order": "asc",
+              "align": "",
+              "separator": "",
+              "empty_column": 0
+            },
+            "timestamp": {
+              "sortable": 1,
+              "default_sort_order": "desc",
+              "align": "",
+              "separator": "",
+              "empty_column": 0
+            },
+            "state": {
+              "sortable": 0,
+              "default_sort_order": "desc",
+              "align": "",
+              "separator": "",
+              "empty_column": 0
+            }
+          }
+        },
+        "fields": {
+          "nid": {
+            "id": "nid",
+            "table": "node_revision",
+            "field": "nid"
+          },
+          "vid": {
+            "id": "vid",
+            "table": "node_revision",
+            "field": "vid"
+          },
+          "title": {
+            "id": "title",
+            "table": "node_revision",
+            "field": "title",
+            "alter": {
+              "word_boundary": false,
+              "ellipsis": false
+            },
+            "link_to_node_revision": true
+          },
+          "timestamp": {
+            "id": "timestamp",
+            "table": "node_revision",
+            "field": "timestamp",
+            "alter": {
+              "word_boundary": false,
+              "ellipsis": false
+            }
+          },
+          "state": {
+            "id": "state",
+            "table": "node_revision",
+            "field": "state"
+          }
+        },
+        "filters": {
+          "state": {
+            "id": "state",
+            "table": "node_revision",
+            "field": "state",
+            "value": [
+              "0",
+              "1",
+              "2"
+            ],
+            "exposed": true,
+            "expose": {
+              "operator_id": "state_op",
+              "label": "State",
+              "operator": "state_op",
+              "identifier": "state",
+              "remember_roles": {
+                "2": "2",
+                "1": 0,
+                "3": 0,
+                "4": 0,
+                "5": 0
+              }
+            }
+          }
+        }
+      }
+    },
+    "page": {
+      "display_title": "Page",
+      "display_plugin": "page",
+      "display_options": {
+        "query": {
+          "type": "views_query",
+          "options": []
+        },
+        "path": "content-revisions-summary"
+      }
+    }
+  }
+}

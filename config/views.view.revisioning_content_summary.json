@@ -1,0 +1,245 @@
+{
+  "_config_name": "views.view.revisioning_content_summary",
+  "name": "revisioning_content_summary",
+  "description": "Summary of site content with revision counts and other details, filtered by state.",
+  "tag": "Revisioning",
+  "disabled": false,
+  "base_table": "node",
+  "human_name": "Content summary",
+  "core": 1,
+  "module": "revisioning",
+  "display": {
+    "default": {
+      "display_title": "Defaults",
+      "display_plugin": "default",
+      "display_options": {
+        "query": {
+          "type": "views_query",
+          "options": []
+        },
+        "title": "Summary of site content",
+        "use_more_always": false,
+        "access": {
+          "type": "role",
+          "role": {
+            "2": 2
+          }
+        },
+        "cache": {
+          "type": "none"
+        },
+        "exposed_form": {
+          "type": "basic"
+        },
+        "pager": {
+          "type": "full",
+          "options": {
+            "items_per_page": 20
+          }
+        },
+        "style_plugin": "table",
+        "style_options": {
+          "columns": {
+            "title": "title",
+            "type": "type",
+            "changed": "changed",
+            "name": "name",
+            "number_of_revisions": "number_of_revisions",
+            "state": "state",
+            "view_node": "view_node",
+            "edit_node": "edit_node",
+            "timestamp": "timestamp"
+          },
+          "default": "-1",
+          "info": {
+            "title": {
+              "sortable": 1,
+              "separator": ""
+            },
+            "type": {
+              "sortable": 1,
+              "separator": ""
+            },
+            "changed": {
+              "sortable": 1,
+              "separator": ""
+            },
+            "name": {
+              "sortable": 1,
+              "separator": ""
+            },
+            "number_of_revisions": {
+              "sortable": 0,
+              "separator": ""
+            },
+            "state": {
+              "sortable": 0,
+              "separator": ""
+            },
+            "view_node": {
+              "separator": ""
+            },
+            "edit_node": {
+              "separator": ""
+            },
+            "timestamp": {
+              "separator": ""
+            }
+          }
+        },
+        "header": {
+          "text": {
+            "id": "area",
+            "table": "views",
+            "field": "area",
+            "content": "Summary of site content",
+            "format": "filtered_html"
+          }
+        },
+        "empty": {
+          "text": {
+            "id": "area",
+            "table": "views",
+            "field": "area",
+            "content": "No content matches your query.",
+            "format": "filtered_html"
+          }
+        },
+        "relationships": {
+          "uid": {
+            "id": "uid",
+            "table": "node",
+            "field": "uid"
+          }
+        },
+        "fields": {
+          "nid": {
+            "id": "nid",
+            "table": "node",
+            "field": "nid",
+            "exclude": true
+          },
+          "title": {
+            "id": "title",
+            "table": "node",
+            "field": "title",
+            "alter": {
+              "make_link": true,
+              "path": "node/[nid]/view"
+            },
+            "link_to_node": false
+          },
+          "type": {
+            "id": "type",
+            "table": "node",
+            "field": "type"
+          },
+          "changed": {
+            "id": "changed",
+            "table": "node",
+            "field": "changed",
+            "label": "Last updated"
+          },
+          "name": {
+            "id": "name",
+            "table": "users",
+            "field": "name",
+            "relationship": "uid",
+            "label": "Author"
+          },
+          "revision_moderation": {
+            "id": "revision_moderation",
+            "table": "node",
+            "field": "revision_moderation",
+            "label": "Mod?",
+            "alter": {
+              "alter_text": true,
+              "make_link": true,
+              "path": "node/[nid]/revisions"
+            },
+            "empty": "No",
+            "hide_empty": true
+          },
+          "number_of_revisions": {
+            "id": "number_of_revisions",
+            "table": "node",
+            "field": "number_of_revisions",
+            "label": "Rev.",
+            "alter": {
+              "alt": "View revision summary"
+            }
+          },
+          "state": {
+            "id": "state",
+            "table": "node",
+            "field": "state"
+          },
+          "edit_node": {
+            "id": "edit_node",
+            "table": "views_entity_node",
+            "field": "edit_node",
+            "label": ""
+          },
+          "timestamp": {
+            "id": "timestamp",
+            "table": "history",
+            "field": "timestamp",
+            "label": ""
+          }
+        },
+        "sorts": {
+          "changed": {
+            "id": "changed",
+            "table": "node",
+            "field": "changed",
+            "order": "DESC"
+          }
+        },
+        "filters": {
+          "revision_moderation": {
+            "id": "revision_moderation",
+            "table": "node",
+            "field": "revision_moderation",
+            "exposed": true,
+            "expose": {
+              "operator_id": "revision_moderation_op",
+              "label": "Moderated?",
+              "operator": "revision_moderation_op",
+              "identifier": "revision_moderation",
+              "remember": true
+            }
+          },
+          "state": {
+            "id": "state",
+            "table": "node",
+            "field": "state",
+            "exposed": true,
+            "expose": {
+              "operator_id": "state_op",
+              "label": "State",
+              "operator": "state_op",
+              "identifier": "state"
+            }
+          }
+        }
+      }
+    },
+    "page_1": {
+      "display_title": "Page",
+      "display_plugin": "page",
+      "display_options": {
+        "query": {
+          "type": "views_query",
+          "options": []
+        },
+        "path": "content-summary",
+        "menu": {
+          "type": "normal",
+          "title": "Content summary",
+          "description": "Summary of site content",
+          "weight": "-1"
+        }
+      }
+    }
+  }
+}
