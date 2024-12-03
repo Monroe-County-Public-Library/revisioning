@@ -705,6 +705,7 @@ function revisioning_node_insert($node) {
       }
     }
   }
+cache('entity_node')->delete($node->nid);
 }
 
 /**
